@@ -1,0 +1,109 @@
+
+
+#define BLYNK_TEMPLATE_ID "TMPL5GonDHHh"
+#define BLYNK_DEVICE_NAME "NIGHT PATROLLING ROBOT"
+#define BLYNK_AUTH_TOKEN "b0Z2aZMiEbSK2hSiqSkVtD6-8oBvkDc1"
+
+#define BLYNK_PRINT Serial
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+
+#include <Servo.h>
+
+ 
+char auth[] = BLYNK_AUTH_TOKEN;
+char ssid[] = "_arrrpit";  
+char pass[] = "sicmunduscreatusest";
+ 
+int smokeA0 = A0;
+int irD0 = D0;
+int fireD1 = D1;
+int flag=0;
+int flag1=0; 
+int data = 0;
+int sensorThres = 100;
+int datair=0;
+int datafire=0; 
+
+int pos = 90;
+Servo servo_9;
+
+BlynkTimer timer;
+
+void notifyOnIR()  
+ {  
+  int datair = digitalRead(irD0);  
+  Serial.print("IR: ");
+  Serial.println(datair);
+  if (datair=1) 
+  {  
+   Blynk.email("test@gmail.com", "Alert", "Something is in Front of the Robot !!!");
+   Blynk.logEvent("ir","Something is in Front of the Robot !!!");  
+  }
+ }  
+
+void notifyOnFire()
+{
+  int datafire = digitalRead(fireD1);
+  Blynk.virtualWrite(V1, datafire);
+  Serial.print("Fire: ");
+  Serial.println(datafire);
+  if (datafire==1)
+  {
+    Blynk.email("test@gmail.com", "Alert", "Fire Detected!");
+    Blynk.logEvent("fire_alert","Fire Detected !!!"); 
+  }
+}
+
+void sendSensor(){
+ 
+ int data = analogRead(smokeA0);
+ Blynk.virtualWrite(V0, data);
+  Serial.print("Gas: ");
+  Serial.println(data);
+
+
+  if(data > 550)     // Change the Trashold value
+  {
+    Blynk.email("test@gmail.com", "Alert", "Gas Leakage Detected!");
+    Blynk.logEvent("gas_alert","Gas Leakage Detected !!!");
+  }
+}
+
+void setup(){
+  servo_9.attach(0); //D3
+  servo_9.write(0);
+  pinMode(smokeA0, INPUT);
+  pinMode(D1,INPUT_PULLUP);
+  pinMode(D0,INPUT_PULLUP);  
+  Serial.begin(9600);
+  Blynk.begin(auth, ssid, pass,"blr1.blynk.cloud");
+  timer.setInterval(1000L,notifyOnFire); 
+  timer.setInterval(2500L, sendSensor);
+  timer.setInterval(1000L,notifyOnIR);   
+}
+
+void loop(){
+  Blynk.run();
+  timer.run();
+  for (pos = 90; pos <= 180; pos += 1)
+  {
+    servo_9.write(pos);
+    delay(15); 
+  }
+  for (pos = 180; pos >= 90; pos -= 1)
+  {
+    servo_9.write(pos);
+    delay(15); 
+  }
+  for (pos = 90; pos >= 0; pos -= 1)
+  {
+    servo_9.write(pos);
+    delay(15); 
+  }
+  for (pos = 0; pos <= 90; pos += 1)
+  {
+    servo_9.write(pos);
+    delay(15);
+  }
+}
